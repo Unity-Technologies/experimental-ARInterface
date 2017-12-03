@@ -47,7 +47,12 @@ namespace UnityARInterface
                 gameObject.SetActive(true);
             }
 
-            m_Session.Connect();
+            m_Session.Connect().ThenAction((result) =>
+            {
+                // Must re-enable the ARController because if we needed to prompt for camera permission, we 
+                // will have returned below immediately and the ARController will have disabled itself.
+                ARController.FindObjectOfType<ARController>().enabled = true;
+            });
             return SessionManager.ConnectionState == SessionConnectionState.Connected;
         }
 
