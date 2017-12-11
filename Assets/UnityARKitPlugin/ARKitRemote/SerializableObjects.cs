@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEngine.XR.iOS;
 using System.Text;
@@ -136,6 +136,99 @@ namespace Utils
 
 	};
 
+
+	[Serializable]
+	public class serializableSHC
+	{
+		public byte [] shcData;
+
+		public serializableSHC(byte [] inputSHCData)
+		{
+			shcData = inputSHCData;
+		}
+
+		public static implicit operator serializableSHC(float [] floatsSHC)
+		{
+			if (floatsSHC != null)
+			{
+				byte [] createBuf = new byte[floatsSHC.Length * sizeof(float)];
+				for(int i = 0; i < floatsSHC.Length; i++)
+				{
+					Buffer.BlockCopy( BitConverter.GetBytes( floatsSHC[i] ), 0, createBuf, (i)*sizeof(float), sizeof(float) );
+				}
+				return new serializableSHC (createBuf);
+			}
+			else 
+			{
+				return new serializableSHC(null);
+			}
+		}
+
+		public static implicit operator float [] (serializableSHC spc)
+		{
+			if (spc.shcData != null) 
+			{
+				int numFloats = spc.shcData.Length / (sizeof(float));
+				float [] shcFloats = new float[numFloats];
+				for (int i = 0; i < numFloats; i++) 
+				{
+					shcFloats [i] = BitConverter.ToSingle (spc.shcData, i * sizeof(float));
+				}
+				return shcFloats;
+			} 
+			else 
+			{
+				return null;
+			}
+		}
+
+
+	};
+
+	[Serializable]
+	public class serializableUnityARLightData
+	{
+		public LightDataType whichLight;
+		public serializableSHC lightSHC;
+		public SerializableVector4 primaryLightDirAndIntensity;
+		public float ambientIntensity;
+		public float ambientColorTemperature;
+
+		serializableUnityARLightData(UnityARLightData lightData)
+		{
+			whichLight = lightData.arLightingType;
+			if (whichLight == LightDataType.DirectionalLightEstimate) {
+				lightSHC = lightData.arDirectonalLightEstimate.sphericalHarmonicsCoefficients;
+				Vector3 lightDir = lightData.arDirectonalLightEstimate.primaryLightDirection;
+				float lightIntensity = lightData.arDirectonalLightEstimate.primaryLightIntensity;
+				primaryLightDirAndIntensity = new SerializableVector4 (lightDir.x, lightDir.y, lightDir.z, lightIntensity);
+			} else {
+				ambientIntensity = lightData.arLightEstimate.ambientIntensity;
+				ambientColorTemperature = lightData.arLightEstimate.ambientColorTemperature;
+			}
+		}
+
+		public static implicit operator serializableUnityARLightData(UnityARLightData rValue)
+		{
+			return new serializableUnityARLightData(rValue);
+		}
+
+		public static implicit operator UnityARLightData(serializableUnityARLightData rValue)
+		{
+			UnityARDirectionalLightEstimate udle = null;
+			UnityARLightEstimate ule = new UnityARLightEstimate (rValue.ambientIntensity, rValue.ambientColorTemperature);
+
+			if (rValue.whichLight == LightDataType.DirectionalLightEstimate) {
+				Vector3 lightDir = new Vector3 (rValue.primaryLightDirAndIntensity.x, rValue.primaryLightDirAndIntensity.y, rValue.primaryLightDirAndIntensity.z);
+				udle = new UnityARDirectionalLightEstimate (rValue.lightSHC, lightDir, rValue.primaryLightDirAndIntensity.w);
+			} 
+
+			return new UnityARLightData(rValue.whichLight, ule, udle);
+		}
+
+	}
+
+
 	[Serializable]  
 	public class serializableUnityARCamera
 	{
@@ -144,31 +237,31 @@ namespace Utils
 		public ARTrackingState trackingState;
 		public ARTrackingStateReason trackingReason;
 		public UnityVideoParams videoParams;
-		public UnityARLightEstimate lightEstimation;
+		public serializableUnityARLightData lightData;
 		public serializablePointCloud pointCloud;
 		public serializableUnityARMatrix4x4 displayTransform;
 
 
-		public serializableUnityARCamera( serializableUnityARMatrix4x4 wt, serializableUnityARMatrix4x4 pm, ARTrackingState ats, ARTrackingStateReason atsr, UnityVideoParams uvp, UnityARLightEstimate lightEst, serializableUnityARMatrix4x4 dt, serializablePointCloud spc)
+		public serializableUnityARCamera( serializableUnityARMatrix4x4 wt, serializableUnityARMatrix4x4 pm, ARTrackingState ats, ARTrackingStateReason atsr, UnityVideoParams uvp, UnityARLightData lightDat, serializableUnityARMatrix4x4 dt, serializablePointCloud spc)
 		{
 			worldTransform = wt;
 			projectionMatrix = pm;
 			trackingState = ats;
 			trackingReason = atsr;
 			videoParams = uvp;
-			lightEstimation = lightEst;
+			lightData = lightDat;
 			displayTransform = dt;
 			pointCloud = spc;
 		}
 
 		public static implicit operator serializableUnityARCamera(UnityARCamera rValue)
 		{
-			return new serializableUnityARCamera(rValue.worldTransform, rValue.projectionMatrix, rValue.trackingState, rValue.trackingReason, rValue.videoParams, rValue.lightEstimation, rValue.displayTransform, rValue.pointCloudData);
+			return new serializableUnityARCamera(rValue.worldTransform, rValue.projectionMatrix, rValue.trackingState, rValue.trackingReason, rValue.videoParams, rValue.lightData, rValue.displayTransform, rValue.pointCloudData);
 		}
 
 		public static implicit operator UnityARCamera(serializableUnityARCamera rValue)
 		{
-			return new UnityARCamera (rValue.worldTransform, rValue.projectionMatrix, rValue.trackingState, rValue.trackingReason, rValue.videoParams, rValue.lightEstimation, rValue.displayTransform, rValue.pointCloud);
+			return new UnityARCamera (rValue.worldTransform, rValue.projectionMatrix, rValue.trackingState, rValue.trackingReason, rValue.videoParams, rValue.lightData, rValue.displayTransform, rValue.pointCloud);
 		}
 
 
