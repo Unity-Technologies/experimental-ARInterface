@@ -108,7 +108,7 @@ namespace GoogleARCoreInternal
 
             // The planes api is handling a COM reset, and the current state is not available. Leave the most recent
             // Api planes collection unchanged.
-            if (apiPlanesPtr == IntPtr.Zero)
+            if (apiPlanesPtr == null)
             {
                 return false;
             }

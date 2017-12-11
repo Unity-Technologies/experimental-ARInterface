@@ -6,29 +6,35 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/UnityARInterface/Examples/ScaledContent/ScaledContent.unity
-    guid: 0f84f793d5703364299eb073fc904f45
+    path: Assets/UnityARKitPlugin/Examples/UnityARKitScene/UnityARKitScene.unity
+    guid: c159f2591a9b5c843b0a0442451f78f8
   - enabled: 0
-    path: Assets/UnityARInterface/ARRemote/RemoteDevice.unity
-    guid: 20b446302c6bc5a4db8e59fc358aba13
+    path: Assets/UnityARKitPlugin/Examples/UnityParticlePainter/UnityParticlePainter.unity
+    guid: 0327f0aa0142146c291df8203b848257
   - enabled: 0
-    path: Assets/UnityARInterface/Examples/SimpleAROptions/SimpleAROptions.unity
-    guid: f7615a991533a4c50866ba45f97cc13a
+    path: Assets/UnityARKitPlugin/Examples/UnityARBallz/UnityARBallz.unity
+    guid: 75972bcfc855b486593ec2ec68da0b81
   - enabled: 0
-    path: Assets/UnityARInterface/Examples/ARFocusSquare/ARFocusSquareScene.unity
-    guid: 136f835817e3a4ccd86e1434503880d7
+    path: Assets/UnityARKitPlugin/Examples/UnityARShadows/UnityARShadows.unity
+    guid: 14d17ec7304f440b48e6b953ba7a5895
   - enabled: 0
-    path: Assets/UnityARInterface/Examples/ARBallz/ARBallz.unity
-    guid: dff119607a5a14008b94240522000efb
+    path: Assets/UnityARKitPlugin/Examples/UnityAROcclusion/UnityAROcclusion.unity
+    guid: 7f026c59fb9d6489ab924c6e0e119760
   - enabled: 0
-    path: Assets/GoogleARCore/HelloARExample/Scenes/HelloAR.unity
-    guid: e6a6fa04348cb45c9b0221eb19c946da
+    path: Assets/UnityARKitPlugin/ARKitRemote/UnityARKitRemote.unity
+    guid: 3ed73c0c9d4b76a418a0541c0cefd3ac
   - enabled: 0
-    path: Assets/TanksNetworkingAR/Scenes/ARSetupScene.unity
-    guid: 080ac1b98781a4b7ba0ae27b39577f1b
+    path: Assets/UnityARKitPlugin/Examples/FocusSquare/FocusSquareScene.unity
+    guid: 3c9ef824a7b95400bade362484e9b6af
   - enabled: 0
-    path: Assets/TanksNetworkingAR/Scenes/LobbyScene.unity
-    guid: 36e75a5ad0c2df847b41f2c664f486c6
+    path: Assets/UnityARKitPlugin/Examples/FaceTracking/FaceAnchorScene.unity
+    guid: 46e299c2ec1244fbaa1b9b14e2ab198a
   - enabled: 0
-    path: Assets/TanksNetworkingAR/Scenes/CompleteMainScene.unity
-    guid: 53dbee9b5f0f43642ab7e99460ca86d2
+    path: Assets/UnityARKitPlugin/Examples/FaceTracking/FaceMeshScene.unity
+    guid: e95b28d2a95b34b868e407dc86a3e6d2
+  - enabled: 0
+    path: Assets/UnityARKitPlugin/Examples/FaceTracking/FaceBlendshapeScene.unity
+    guid: 74c2619dd419d4704bba49146f77161d
+  - enabled: 0
+    path: Assets/UnityARKitPlugin/Examples/FaceTracking/FaceDirectionalLightEstimate.unity
+    guid: 360fd35caee4f4e069485021a27c0b06
