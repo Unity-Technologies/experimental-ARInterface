@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using GoogleARCore;
 using System.Collections;
+using GoogleARCoreInternal;
 
 namespace UnityARInterface
 {
@@ -11,38 +12,157 @@ namespace UnityARInterface
 		private List<TrackedPlane> m_TrackedPlaneBuffer = new List<TrackedPlane>();
 		private ScreenOrientation m_CachedScreenOrientation;
 		private Dictionary<TrackedPlane, BoundedPlane> m_TrackedPlanes = new Dictionary<TrackedPlane, BoundedPlane>();
-		private ARCoreSession m_Session;
-		private Matrix4x4 m_DisplayTransform = Matrix4x4.identity;
+        private SessionManager m_SessionManager;
+        private ARCoreSessionConfig m_ARCoreSessionConfig;
+
+        private Matrix4x4 m_DisplayTransform = Matrix4x4.identity;
+
+        public override bool IsSupported
+        {
+            get
+            {
+                if (m_SessionManager == null)
+                    m_SessionManager = SessionManager.CreateSession();
+
+                if (m_ARCoreSessionConfig == null)
+                    m_ARCoreSessionConfig = ScriptableObject.CreateInstance<ARCoreSessionConfig>();
+
+                return m_SessionManager.CheckSupported((m_ARCoreSessionConfig));
+            }
+        }
 
 		public override IEnumerator StartService(Settings settings)
 		{
-			if (m_Session == null)
+            if(m_ARCoreSessionConfig == null)
+                m_ARCoreSessionConfig = ScriptableObject.CreateInstance<ARCoreSessionConfig>();
+
+            m_ARCoreSessionConfig.EnableLightEstimation = settings.enableLightEstimation;
+            m_ARCoreSessionConfig.EnablePlaneFinding = settings.enablePlaneDetection;
+            //Do we want to match framerate to the camera?
+            m_ARCoreSessionConfig.MatchCameraFramerate = false;
+
+            if (m_SessionManager == null)
 			{
-				var sessionConfig = ScriptableObject.CreateInstance<ARCoreSessionConfig>();
+                m_SessionManager = SessionManager.CreateSession();
+                if (!m_SessionManager.CheckSupported((m_ARCoreSessionConfig)))
+                    yield break;
+                
+                Session.Initialize(m_SessionManager);
 
-				sessionConfig.EnableLightEstimation = settings.enableLightEstimation;
-				sessionConfig.EnablePlaneFinding = settings.enablePlaneDetection;
-				//Do we want to match framerate to the camera?
-				sessionConfig.MatchCameraFramerate = false;
-
-				var gameObject = new GameObject("Session Manager");
-
-				// Deactivate the GameObject before adding the SessionComponent
-				// or else the Awake method will be called before we have set
-				// the session config.
-				gameObject.SetActive(false);
-				m_Session = gameObject.AddComponent<ARCoreSession>();
-				m_Session.ConnectOnAwake = false;
-				m_Session.SessionConfig = sessionConfig;
-
-				gameObject.SetActive(true);
+                if (Session.ConnectionState != SessionConnectionState.Uninitialized)
+                {
+                    ARDebug.LogError("Could not create an ARCore session.  The current Unity Editor may not support this " +
+                        "version of ARCore.");
+                    yield break;
+                }
 			}
-			//This is an async task
-			var task = m_Session.Connect();
+
+            //This is an async task
+            var task = Connect(m_ARCoreSessionConfig);
 			yield return new WaitUntil (() => task.IsComplete);
 			IsRunning = task.Result == SessionConnectionState.Connected;
 		}
 
+        /// <summary>
+        /// Connects an ARSession.  Note that if user permissions are needed they will be requested and thus this is an
+        /// asynchronous method.
+        /// </summary>
+        /// <param name="sessionConfig">The session configuration.</param>
+        /// <returns>An {@link AsyncTask<T>} that completes when the connection has been made or failed. </returns>
+        public AsyncTask<SessionConnectionState> Connect(ARCoreSessionConfig sessionConfig)
+        {
+            const string androidCameraPermissionName = "android.permission.CAMERA";
+
+            if (m_SessionManager == null)
+            {
+                ARDebug.LogError("Cannot connect because ARCoreSession failed to initialize.");
+                return new AsyncTask<SessionConnectionState>(SessionConnectionState.Uninitialized);
+            }
+
+            if (sessionConfig == null)
+            {
+                ARDebug.LogError("Unable to connect ARSession session due to missing ARSessionConfig.");
+                m_SessionManager.ConnectionState = SessionConnectionState.MissingConfiguration;
+                return new AsyncTask<SessionConnectionState>(Session.ConnectionState);
+            }
+
+            // We have already connected at least once.
+            if (Session.ConnectionState != SessionConnectionState.Uninitialized)
+            {
+                ARDebug.LogError("Multiple attempts to connect to the ARSession.  Note that the ARSession connection " +
+                    "spans the lifetime of the application and cannot be reconfigured.  This will change in future " +
+                    "versions of ARCore.");
+                return new AsyncTask<SessionConnectionState>(Session.ConnectionState);
+            }
+
+            // Create an asynchronous task for the potential permissions flow and service connection.
+            Action<SessionConnectionState> onTaskComplete;
+            var returnTask = new AsyncTask<SessionConnectionState>(out onTaskComplete);
+            returnTask.ThenAction((connectionState) =>
+            {
+                m_SessionManager.ConnectionState = connectionState;
+            });
+
+            // Attempt service connection immediately if permissions are granted.
+            if (AndroidPermissionsManager.IsPermissionGranted(androidCameraPermissionName))
+            {
+                _ResumeSession(sessionConfig, onTaskComplete);
+                return returnTask;
+            }
+
+            // Request needed permissions and attempt service connection if granted.
+            AndroidPermissionsManager.RequestPermission(androidCameraPermissionName).ThenAction((requestResult) =>
+            {
+                if (requestResult.IsAllGranted)
+                {
+                    _ResumeSession(sessionConfig, onTaskComplete);
+                }
+                else
+                {
+                    ARDebug.LogError("ARCore connection failed because a needed permission was rejected.");
+                    onTaskComplete(SessionConnectionState.UserRejectedNeededPermission);
+                }
+            });
+
+            return returnTask;
+        }
+
+        /// <summary>
+        /// Connects to the ARCore service.
+        /// </summary>
+        /// <param name="sessionConfig">The session configuration to connect with.</param>
+        /// <param name="onComplete">A callback for when the result of the connection attempt is known.</param>
+        private void _ResumeSession(ARCoreSessionConfig sessionConfig, Action<SessionConnectionState> onComplete)
+        {
+            if (!m_SessionManager.CheckSupported(sessionConfig))
+            {
+                ARDebug.LogError("The requested ARCore session configuration is not supported.");
+                onComplete(SessionConnectionState.InvalidConfiguration);
+                return;
+            }
+
+            if (!m_SessionManager.SetConfiguration(sessionConfig))
+            {
+                ARDebug.LogError("ARCore connection failed because the current configuration is not supported.");
+                onComplete(SessionConnectionState.InvalidConfiguration);
+                return;
+            }
+
+            Frame.Initialize(m_SessionManager.FrameManager);
+
+            // ArSession_resume needs to be called in the UI thread due to b/69682628.
+            AsyncTask.PerformActionInUIThread(() =>
+            {
+                if (!m_SessionManager.Resume())
+                {
+                    onComplete(SessionConnectionState.ConnectToServiceFailed);
+                }
+                else
+                {
+                    onComplete(SessionConnectionState.Connected);
+                }
+            });
+        }
 		public override void StopService()
 		{
             Frame.Destroy();
@@ -171,7 +291,14 @@ namespace UnityARInterface
 
 		public override void Update()
 		{
-			if (Frame.TrackingState != TrackingState.Tracking)
+            if (m_SessionManager == null)
+            {
+                return;
+            }
+
+            AsyncTask.OnUpdate();
+
+            if (Frame.TrackingState != TrackingState.Tracking)
 				return;
 
 			//This is not efficient, as it updates planes even if they didnt change

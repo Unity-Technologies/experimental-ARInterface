@@ -48,6 +48,8 @@ namespace UnityARInterface
 
         public virtual bool IsRunning { get; protected set; } 
 
+        public virtual bool IsSupported { get { return true; } }
+
 		public abstract IEnumerator StartService(Settings settings);
 
         public abstract void StopService();

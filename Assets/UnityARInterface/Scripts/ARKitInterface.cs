@@ -27,6 +27,14 @@ namespace UnityARInterface
         private LightEstimate m_LightEstimate;
 		private Matrix4x4 m_DisplayTransform;
 
+        public override bool IsSupported
+        {
+            get
+            {
+                return (new ARKitWorldTrackingSessionConfiguration()).IsSupported;
+            }
+        }
+
         // Use this for initialization
 		public override IEnumerator StartService(Settings settings)
         {
@@ -36,6 +44,9 @@ namespace UnityARInterface
                 settings.enablePointCloud,
                 settings.enableLightEstimation);
 
+            if(!sessionConfig.IsSupported) 
+                return null;
+ 
             UnityARSessionRunOption runOptions =
                 UnityARSessionRunOption.ARSessionRunOptionRemoveExistingAnchors |
                 UnityARSessionRunOption.ARSessionRunOptionResetTracking;
@@ -49,7 +60,7 @@ namespace UnityARInterface
             UnityARSessionNativeInterface.ARAnchorRemovedEvent += RemoveAnchor;
             UnityARSessionNativeInterface.ARFrameUpdatedEvent += UpdateFrame;
 
-			serviceRunning = true;
+			IsRunning = true;
 
 			return null;
         }
@@ -153,7 +164,7 @@ namespace UnityARInterface
             m_PinnedUVArray.Free();
             m_TexturesInitialized = false;
 
-			serviceRunning = false;
+			IsRunning = false;
         }
 
         public override bool TryGetUnscaledPose(ref Pose pose)
