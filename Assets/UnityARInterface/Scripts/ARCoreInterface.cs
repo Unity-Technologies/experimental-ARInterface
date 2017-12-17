@@ -45,7 +45,8 @@ namespace UnityARInterface
 
 		public override void StopService()
 		{
-			// Not implemented on ARCore.
+            Frame.Destroy();
+            Session.Destroy();
 			serviceRunning = false;
 			return;
 		}
