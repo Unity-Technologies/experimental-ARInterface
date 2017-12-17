@@ -40,7 +40,7 @@ namespace UnityARInterface
         public int playerId { get { return m_CurrentPlayerId; } }
 
         private bool m_ServiceRunning = false;
-		public override bool serviceRunning { get { return m_ServiceRunning; } }
+		public override bool IsRunning { get { return m_ServiceRunning; } }
 
         Texture2D m_RemoteScreenYTexture;
         Texture2D m_RemoteScreenUVTexture;
@@ -186,13 +186,13 @@ namespace UnityARInterface
         //
 		public override IEnumerator StartService(Settings settings)
         {
-			serviceRunning = true;
+			IsRunning = true;
 			return null;
         }
 
         public override void StopService()
         {
-			serviceRunning = false;
+			IsRunning = false;
         }
 
         public override void SetupCamera(Camera camera)

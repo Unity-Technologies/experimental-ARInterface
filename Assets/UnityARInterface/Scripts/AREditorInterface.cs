@@ -59,13 +59,13 @@ namespace UnityARInterface
                     UnityEngine.Random.Range(-2f, 2f));
             }
 
-			serviceRunning = true;
+			IsRunning = true;
 			return null;
         }
 
         public override void StopService()
         {
-			serviceRunning = false;
+			IsRunning = false;
         }
 
         public override bool TryGetUnscaledPose(ref Pose pose)

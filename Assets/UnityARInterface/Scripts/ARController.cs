@@ -70,7 +70,7 @@ namespace UnityARInterface
 			get { 
 				if (m_ARInterface == null)
 					return false;
-				return m_ARInterface.serviceRunning;
+				return m_ARInterface.IsRunning;
 			}
 		}
 

@@ -34,7 +34,7 @@ namespace UnityARInterface
 			get { 
 				if (m_ARInterface == null)
 					return false;
-				return m_ARInterface.serviceRunning;
+				return m_ARInterface.IsRunning;
 			}
 		}
 
@@ -151,7 +151,7 @@ namespace UnityARInterface
 			var arInterface = ARInterface.GetInterface();
 
 			yield return arInterface.StartService(m_CachedSettings);
-			if (!arInterface.serviceRunning)
+			if (!arInterface.IsRunning)
 				yield break;
 
 			m_ARInterface = arInterface;

@@ -46,7 +46,7 @@ namespace UnityARInterface
         public static Action<BoundedPlane> planeUpdated;
         public static Action<BoundedPlane> planeRemoved;
 
-		public virtual bool serviceRunning { get; protected set; }
+        public virtual bool IsRunning { get; protected set; } 
 
 		public abstract IEnumerator StartService(Settings settings);
 

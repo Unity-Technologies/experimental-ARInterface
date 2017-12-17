@@ -40,14 +40,14 @@ namespace UnityARInterface
 			//This is an async task
 			var task = m_Session.Connect();
 			yield return new WaitUntil (() => task.IsComplete);
-			serviceRunning = task.Result == SessionConnectionState.Connected;
+			IsRunning = task.Result == SessionConnectionState.Connected;
 		}
 
 		public override void StopService()
 		{
             Frame.Destroy();
             Session.Destroy();
-			serviceRunning = false;
+			IsRunning = false;
 			return;
 		}
 
