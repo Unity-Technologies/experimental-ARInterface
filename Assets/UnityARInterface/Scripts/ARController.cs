@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 #if UNITY_EDITOR
 using UnityEngine.Networking.PlayerConnection;
@@ -65,7 +66,13 @@ namespace UnityARInterface
             }
         }
 
-        public bool serviceRunning { get; protected set; }
+		public bool serviceRunning { 
+			get { 
+				if (m_ARInterface == null)
+					return false;
+				return m_ARInterface.serviceRunning;
+			}
+		}
 
         public void AlignWithPointOfInterest(Vector3 position)
         {
@@ -114,22 +121,28 @@ namespace UnityARInterface
             if (m_ARCamera == null)
                 m_ARCamera = Camera.main;
 
-            serviceRunning = m_ARInterface.StartService(GetSettings());
+			StopAllCoroutines ();
+			StartCoroutine (StartServiceRoutine());
 
-            if (serviceRunning)
-            {
-                m_ARInterface.SetupCamera(m_ARCamera);
-                Application.onBeforeRender += OnBeforeRender;
-            }
-            else
-            {
-                enabled = false;
-            }
         }
+
+		IEnumerator StartServiceRoutine() {
+			yield return m_ARInterface.StartService(GetSettings());
+			if (serviceRunning)
+			{
+				m_ARInterface.SetupCamera(m_ARCamera);
+				Application.onBeforeRender += OnBeforeRender;
+			}
+			else
+			{
+				enabled = false;
+			}
+		}
 
         void OnDisable()
         {
-            if (serviceRunning)
+			StopAllCoroutines ();
+			if (serviceRunning)
             {
                 m_ARInterface.StopService();
                 Application.onBeforeRender -= OnBeforeRender;

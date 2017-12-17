@@ -7,6 +7,9 @@ using UnityEngine.Networking.PlayerConnection;
 using Utils;
 
 // Runs on the remote device. Talks to the Editor.
+using System.Collections;
+
+
 namespace UnityARInterface
 {
     public class ARRemoteDevice : MonoBehaviour
@@ -24,11 +27,18 @@ namespace UnityARInterface
         private PlayerConnection m_PlayerConnection;
         private int m_EditorId;
         public bool isConnected { get { return m_PlayerConnection.isConnected; } }
-        private bool m_ServiceRunning = false;
         private Dictionary<Guid, UnityAction<SerializableSubMessage>> m_MessageHandler =
             new Dictionary<Guid, UnityAction<SerializableSubMessage>>();
 
-        void Register(Guid guid, UnityAction<SerializableSubMessage> handler)
+		public bool serviceRunning { 
+			get { 
+				if (m_ARInterface == null)
+					return false;
+				return m_ARInterface.serviceRunning;
+			}
+		}
+
+		void Register(Guid guid, UnityAction<SerializableSubMessage> handler)
         {
             m_MessageHandler.Add(guid, handler);
         }
@@ -60,7 +70,7 @@ namespace UnityARInterface
         void OnGUI()
         {
             string message = "";
-            if (isConnected && !m_ServiceRunning)
+			if (isConnected && !serviceRunning)
             {
                 message = "Connected. Waiting for Editor.";
             }
@@ -85,11 +95,11 @@ namespace UnityARInterface
 
         void StopService()
         {
+			StopAllCoroutines ();
             m_ARInterface.StopService();
             ARInterface.planeAdded -= PlaneAddedHandler;
             ARInterface.planeUpdated -= PlaneUpdatedHandler;
             ARInterface.planeRemoved -= PlaneRemovedHandler;
-            m_ServiceRunning = false;
             m_ARInterface = null;
             m_HaveSentCameraParams = false;
         }
@@ -107,7 +117,7 @@ namespace UnityARInterface
             if (settings == null)
                 return;
 
-            if (m_ServiceRunning)
+			if (serviceRunning)
             {
                 Debug.LogWarning("Received message to start service while service is already running. Restarting.");
                 m_ARInterface.StopService();
@@ -132,19 +142,26 @@ namespace UnityARInterface
         void StartService(SerializableARSettings serializedSettings)
         {
             m_CachedSettings = serializedSettings;
-            var arInterface = ARInterface.GetInterface();
-            m_ServiceRunning = arInterface.StartService(m_CachedSettings);
 
-            if (!m_ServiceRunning)
-                return;
-
-            m_ARInterface = arInterface;
-            m_ARInterface.SetupCamera(m_ARCamera);
-
-            ARInterface.planeAdded += PlaneAddedHandler;
-            ARInterface.planeUpdated += PlaneUpdatedHandler;
-            ARInterface.planeRemoved += PlaneRemovedHandler;
+			StopAllCoroutines ();
+			StartCoroutine (StartServiceRoutine());
         }
+
+		IEnumerator StartServiceRoutine() {
+			var arInterface = ARInterface.GetInterface();
+
+			yield return arInterface.StartService(m_CachedSettings);
+			if (!arInterface.serviceRunning)
+				yield break;
+
+			m_ARInterface = arInterface;
+			m_ARInterface.SetupCamera(m_ARCamera);
+
+			ARInterface.planeAdded += PlaneAddedHandler;
+			ARInterface.planeUpdated += PlaneUpdatedHandler;
+			ARInterface.planeRemoved += PlaneRemovedHandler;
+		}
+
 
         public void PlaneAddedHandler(BoundedPlane plane)
         {
@@ -228,7 +245,7 @@ namespace UnityARInterface
                 m_ARCamera.transform.rotation = pose.rotation;
             }
 
-            if (isConnected && m_ServiceRunning)
+			if (isConnected && serviceRunning)
             {
                 var serializedFrame = new SerializableFrame(
                     m_ARCamera.projectionMatrix,

@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.Networking.PlayerConnection;
 using Utils;
+using System.Collections;
 
 #if UNITY_EDITOR
 using UnityEditor.Networking.PlayerConnection;
@@ -39,7 +40,7 @@ namespace UnityARInterface
         public int playerId { get { return m_CurrentPlayerId; } }
 
         private bool m_ServiceRunning = false;
-        public bool serviceRunning { get { return m_ServiceRunning; } }
+		public override bool serviceRunning { get { return m_ServiceRunning; } }
 
         Texture2D m_RemoteScreenYTexture;
         Texture2D m_RemoteScreenUVTexture;
@@ -183,14 +184,15 @@ namespace UnityARInterface
         //
         // From the ARInterface
         //
-        public override bool StartService(Settings settings)
+		public override IEnumerator StartService(Settings settings)
         {
-            return true;
+			serviceRunning = true;
+			return null;
         }
 
         public override void StopService()
         {
-
+			serviceRunning = false;
         }
 
         public override void SetupCamera(Camera camera)

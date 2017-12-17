@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
 
 namespace UnityARInterface
 {
@@ -45,7 +46,9 @@ namespace UnityARInterface
         public static Action<BoundedPlane> planeUpdated;
         public static Action<BoundedPlane> planeRemoved;
 
-        public abstract bool StartService(Settings settings);
+		public virtual bool serviceRunning { get; protected set; }
+
+		public abstract IEnumerator StartService(Settings settings);
 
         public abstract void StopService();
 

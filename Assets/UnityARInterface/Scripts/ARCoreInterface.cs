@@ -6,6 +6,7 @@ using UnityEngine.XR;
 using GoogleARCore;
 using GoogleARCoreInternal;
 using ARCoreNative = GoogleAR.UnityNative;
+using System.Collections;
 
 namespace UnityARInterface
 {
@@ -19,7 +20,7 @@ namespace UnityARInterface
         private SessionComponent m_Session;
         private Matrix4x4 m_DisplayTransform = Matrix4x4.identity;
 
-        public override bool StartService(Settings settings)
+		public override IEnumerator StartService(Settings settings)
         {
             if (m_Session == null)
             {
@@ -48,12 +49,16 @@ namespace UnityARInterface
             }
 
             m_Session.Connect();
-            return SessionManager.ConnectionState == SessionConnectionState.Connected;
+			serviceRunning = SessionManager.ConnectionState == SessionConnectionState.Connected;
+
+			return null;
+
         }
 
         public override void StopService()
         {
             // Not implemented on ARCore.
+			serviceRunning = false;
             return;
         }
 
