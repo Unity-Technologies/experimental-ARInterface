@@ -30,7 +30,7 @@ namespace UnityARInterface
         private Dictionary<Guid, UnityAction<SerializableSubMessage>> m_MessageHandler =
             new Dictionary<Guid, UnityAction<SerializableSubMessage>>();
 
-		public bool serviceRunning { 
+		public bool IsRunning { 
 			get { 
 				if (m_ARInterface == null)
 					return false;
@@ -70,7 +70,7 @@ namespace UnityARInterface
         void OnGUI()
         {
             string message = "";
-			if (isConnected && !serviceRunning)
+			if (isConnected && !IsRunning)
             {
                 message = "Connected. Waiting for Editor.";
             }
@@ -117,7 +117,7 @@ namespace UnityARInterface
             if (settings == null)
                 return;
 
-			if (serviceRunning)
+			if (IsRunning)
             {
                 Debug.LogWarning("Received message to start service while service is already running. Restarting.");
                 m_ARInterface.StopService();
@@ -245,7 +245,7 @@ namespace UnityARInterface
                 m_ARCamera.transform.rotation = pose.rotation;
             }
 
-			if (isConnected && serviceRunning)
+			if (isConnected && IsRunning)
             {
                 var serializedFrame = new SerializableFrame(
                     m_ARCamera.projectionMatrix,
