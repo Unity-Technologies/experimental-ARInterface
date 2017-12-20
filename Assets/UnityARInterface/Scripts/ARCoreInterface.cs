@@ -4,12 +4,43 @@ using UnityEngine;
 using GoogleARCore;
 using System.Collections;
 using GoogleARCoreInternal;
+using System.Runtime.InteropServices;
 
 namespace UnityARInterface
 {
 	public class ARCoreInterface : ARInterface
 	{
-		private List<TrackedPlane> m_TrackedPlaneBuffer = new List<TrackedPlane>();
+#region ARCoreCameraAPI
+        public const string ARCoreCameraUtilityAPI = "arcore_camera_utility";
+
+        //Texture size. Larger values are slower.
+        private const int k_ARCoreTextureWidth = 640;
+        private const int k_ARCoreTextureHeight = 480;
+
+        //If you are only using the Y from the YUV frame, its better to set this to ImageFormatGrayscale to save color conversion
+        private ImageFormatType imageFormatType = ImageFormatType.ImageFormatColor;
+
+        [DllImport(ARCoreCameraUtilityAPI)]
+        public static extern void TextureReader_create(int format, int width, int height, bool keepAspectRatio);
+
+        [DllImport(ARCoreCameraUtilityAPI)]
+        public static extern void TextureReader_destroy();
+
+        [DllImport(ARCoreCameraUtilityAPI)]
+        public static extern IntPtr TextureReader_submitAndAcquire(
+            int textureId, int textureWidth, int textureHeight, ref int bufferSize);
+
+        private enum ImageFormatType
+        {
+            ImageFormatColor = 0,
+            ImageFormatGrayscale = 1
+        }
+
+        private byte[] pixelBuffer;
+
+#endregion
+
+        private List<TrackedPlane> m_TrackedPlaneBuffer = new List<TrackedPlane>();
 		private ScreenOrientation m_CachedScreenOrientation;
 		private Dictionary<TrackedPlane, BoundedPlane> m_TrackedPlanes = new Dictionary<TrackedPlane, BoundedPlane>();
         private SessionManager m_SessionManager;
@@ -61,14 +92,11 @@ namespace UnityARInterface
             var task = Connect(m_ARCoreSessionConfig);
 			yield return new WaitUntil (() => task.IsComplete);
 			IsRunning = task.Result == SessionConnectionState.Connected;
+
+            if(IsRunning)
+                TextureReader_create((int)imageFormatType, k_ARCoreTextureWidth, k_ARCoreTextureHeight, true);
 		}
 
-        /// <summary>
-        /// Connects an ARSession.  Note that if user permissions are needed they will be requested and thus this is an
-        /// asynchronous method.
-        /// </summary>
-        /// <param name="sessionConfig">The session configuration.</param>
-        /// <returns>An {@link AsyncTask<T>} that completes when the connection has been made or failed. </returns>
         public AsyncTask<SessionConnectionState> Connect(ARCoreSessionConfig sessionConfig)
         {
             const string androidCameraPermissionName = "android.permission.CAMERA";
@@ -127,11 +155,6 @@ namespace UnityARInterface
             return returnTask;
         }
 
-        /// <summary>
-        /// Connects to the ARCore service.
-        /// </summary>
-        /// <param name="sessionConfig">The session configuration to connect with.</param>
-        /// <param name="onComplete">A callback for when the result of the connection attempt is known.</param>
         private void _ResumeSession(ARCoreSessionConfig sessionConfig, Action<SessionConnectionState> onComplete)
         {
             if (!m_SessionManager.CheckSupported(sessionConfig))
@@ -167,6 +190,7 @@ namespace UnityARInterface
 		{
             Frame.Destroy();
             Session.Destroy();
+            TextureReader_destroy();
 			IsRunning = false;
 			return;
 		}
@@ -185,10 +209,72 @@ namespace UnityARInterface
 			if (Frame.TrackingState != TrackingState.Tracking)
 				return false;
 
-			//return false;
-			//TODO:
-			throw new NotImplementedException("TryGetCameraImage is not yet implemented for ARCore");
-		}
+            if(Frame.CameraImage.Texture == null || Frame.CameraImage.Texture.GetNativeTexturePtr() == IntPtr.Zero)
+                return false;
+    
+            int textureId = Frame.CameraImage.Texture.GetNativeTexturePtr().ToInt32();
+            int bufferSize = 0;
+            IntPtr bufferPtr = TextureReader_submitAndAcquire(textureId, k_ARCoreTextureWidth, k_ARCoreTextureHeight, ref bufferSize);
+
+            GL.InvalidateState();
+
+            if(bufferPtr == IntPtr.Zero || bufferSize == 0)
+                return false;
+
+            if(pixelBuffer == null || pixelBuffer .Length != bufferSize)
+                pixelBuffer = new byte[bufferSize];
+            
+            Marshal.Copy(bufferPtr,pixelBuffer, 0, bufferSize);
+
+            RGBAtoYUV2(pixelBuffer, k_ARCoreTextureWidth, k_ARCoreTextureHeight, ref cameraImage.y, ref cameraImage.uv);
+
+            cameraImage.width = k_ARCoreTextureWidth;
+            cameraImage.height = k_ARCoreTextureHeight;
+
+            return true;
+
+        }
+
+        void RGBAtoYUV2(byte[] rgba, int width, int height, ref byte[] y, ref byte[] uv) {
+            //in grayscale, it's a byte per pixel, which we can just assign to Y, and leave uv null
+            //would save some performance
+            if(imageFormatType == ImageFormatType.ImageFormatGrayscale){
+                y = rgba;
+                uv = null;
+                return;
+            }
+                
+            int pixelCount = width * height;
+
+            if (y == null || y.Length != pixelCount)
+                y = new byte[pixelCount];
+            
+            if (uv == null || uv.Length != pixelCount / 2)
+                uv = new byte[pixelCount / 2];
+
+            int iY = 0;
+            int iUV = 0;
+            int iRGBA = 0;
+
+            for (int row = 0; row < height; row++)
+            {
+                for (int column = 0; column < width; column++)
+                {
+                    //Random magic starts here
+                    int pixelIndex = row * width + column;
+
+                    y[iY++] = (byte)(((66 * rgba[iRGBA] + 129 * rgba[iRGBA + 1] + 25 * rgba[iRGBA + 2] + 128) >> 8) + 16);
+
+                    if (row % 2 == 0 && pixelIndex % 2 == 0)
+                    {
+                        uv[iUV++] = (byte)(((-38 * rgba[iRGBA] - 74 * rgba[iRGBA+1] + 112 * rgba[iRGBA+2] + 128) >> 8) + 128);
+                        uv[iUV++] = (byte)(((112 * rgba[iRGBA] - 94 * rgba[iRGBA+1] - 18 * rgba[iRGBA+2] + 128) >> 8) + 128);
+                    }
+                    //To next pixel
+                    iRGBA += 4;
+                }
+            }
+        }
 
 		public override bool TryGetPointCloud(ref PointCloud pointCloud)
 		{
