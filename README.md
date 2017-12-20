@@ -3,7 +3,7 @@ Experimental cross-platform framework for mobile AR shown as part of ["So You Th
 
 ## Prerequisites
 
-* [Unity 2017.2.0f3](https://store.unity.com/download?ref=update) release or later
+* [Unity 2017.3.0f2](https://store.unity.com/download?ref=update) release or later
 * Unity ARKit plugin on [BitBucket](https://bitbucket.org/Unity-Technologies/unity-arkit-plugin) or from the [Asset Store](https://www.assetstore.unity3d.com/en/#!/content/92515)
 * Unity ARCore plugin setup [following these steps](https://developers.google.com/ar/develop/unity/getting-started) 
 
@@ -24,7 +24,7 @@ To take a look at the API, examine `ARInterface.cs` in the project. Here follows
 
 Firstly we have the calls to start and stop the AR session:
 
-       public abstract bool StartService(Settings settings);
+       public abstract IEnumerator StartService(Settings settings);
        public abstract void StopService();
 
 The `Settings` parameter lets you choose to enable any one or more of point cloud creation, light estimation and plane detection in the session.
