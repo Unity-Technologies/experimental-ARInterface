@@ -32,23 +32,11 @@ namespace UnityARInterface
             m_LastTime = Time.time;
             m_State = State.Initialized;
             m_FakePlanes = new BoundedPlane[2];
-            m_FakePlanes[0] = new BoundedPlane()
-            {
-                id = "0x1",
-                extents = new Vector2(2.2f, 2f),
-                //extents = new Vector2(1f, 1f),
-                rotation = Quaternion.AngleAxis(60f, Vector3.up),
-                center = new Vector3(2f, -1f, 3f)
-                //center = new Vector3(1f, 1f, 1f)
-            };
+            m_FakePlanes[0] = new BoundedPlane("0x1", new Vector3(2f, -1f, 3f),
+                    Quaternion.AngleAxis(60f, Vector3.up), new Vector2(2.2f, 2f));
 
-            m_FakePlanes[1] = new BoundedPlane()
-            {
-                id = "0x2",
-                extents = new Vector2(2f, 2f),
-                rotation = Quaternion.AngleAxis(200f, Vector3.up),
-                center = new Vector3(3f, 1f, 3f)
-            };
+            m_FakePlanes[1] = new BoundedPlane("0x2", new Vector3(3f, 1f, 3f),
+                    Quaternion.AngleAxis(200f, Vector3.up), new Vector2(2f, 2f));
 
             m_PointCloud = new Vector3[20];
             for (int i = 0; i < 20; ++i)

@@ -28,6 +28,8 @@ namespace UnityARInterface
 		private Matrix4x4 m_DisplayTransform;
         private ARKitWorldTrackingSessionConfiguration m_SessionConfig;
 
+        private Dictionary<string, BoundedPlane> m_TrackedPlanes = new Dictionary<string, BoundedPlane>();
+
         public override bool IsSupported
         {
             get
@@ -77,13 +79,16 @@ namespace UnityARInterface
 
         private BoundedPlane GetBoundedPlane(ARPlaneAnchor arPlaneAnchor)
         {
-            return new BoundedPlane()
+            BoundedPlane plane;
+
+            if (!m_TrackedPlanes.TryGetValue(arPlaneAnchor.identifier, out plane))
             {
-                id = arPlaneAnchor.identifier,
-                center = GetWorldPosition(arPlaneAnchor),
-                rotation = UnityARMatrixOps.GetRotation(arPlaneAnchor.transform),
-                extents = new Vector2(arPlaneAnchor.extent.x, arPlaneAnchor.extent.z)
-            };
+                plane = new BoundedPlane(arPlaneAnchor.identifier, GetWorldPosition(arPlaneAnchor),
+                    UnityARMatrixOps.GetRotation(arPlaneAnchor.transform), new Vector2(arPlaneAnchor.extent.x, arPlaneAnchor.extent.z));
+                m_TrackedPlanes.Add(arPlaneAnchor.identifier, plane);
+            }
+
+            return plane;
         }
 
         void UpdateFrame(UnityARCamera camera)

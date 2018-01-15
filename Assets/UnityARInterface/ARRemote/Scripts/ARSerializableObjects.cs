@@ -150,13 +150,8 @@ namespace UnityARInterface
 
         public static implicit operator BoundedPlane(SerializableBoundedPlane serializedPlane)
         {
-            return new BoundedPlane()
-            {
-                id = Encoding.UTF8.GetString(serializedPlane.identifier),
-                center = serializedPlane.center,
-                extents = serializedPlane.extents,
-                rotation = serializedPlane.rotation
-            };
+            return new BoundedPlane(Encoding.UTF8.GetString(serializedPlane.identifier), serializedPlane.center,
+                    serializedPlane.rotation, serializedPlane.extents);
         }
     }
 
