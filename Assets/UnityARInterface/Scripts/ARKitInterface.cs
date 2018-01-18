@@ -79,16 +79,17 @@ namespace UnityARInterface
 
         private BoundedPlane GetBoundedPlane(ARPlaneAnchor arPlaneAnchor)
         {
-            BoundedPlane plane;
+            /*BoundedPlane plane;
 
             if (!m_TrackedPlanes.TryGetValue(arPlaneAnchor, out plane))
             {
                 plane = new BoundedPlane(arPlaneAnchor.identifier, GetWorldPosition(arPlaneAnchor),
                     UnityARMatrixOps.GetRotation(arPlaneAnchor.transform), new Vector2(arPlaneAnchor.extent.x, arPlaneAnchor.extent.z));
                 m_TrackedPlanes.Add(arPlaneAnchor, plane);
-            }
+            }*/
 
-            return plane;
+            return new BoundedPlane(arPlaneAnchor.identifier, GetWorldPosition(arPlaneAnchor),
+                    UnityARMatrixOps.GetRotation(arPlaneAnchor.transform), new Vector2(arPlaneAnchor.extent.x, arPlaneAnchor.extent.z)); ;
         }
 
         void UpdateFrame(UnityARCamera camera)
@@ -160,7 +161,7 @@ namespace UnityARInterface
 
         private void UpdateAnchor(ARPlaneAnchor arPlaneAnchor)
         {
-            BoundedPlane plane = GetBoundedPlane(arPlaneAnchor);
+            /*BoundedPlane plane = GetBoundedPlane(arPlaneAnchor);
 
             if (PlaneUpdated(arPlaneAnchor, plane))
             {
@@ -169,7 +170,8 @@ namespace UnityARInterface
                 plane.extents.x = arPlaneAnchor.extent.x;
                 plane.extents.y = arPlaneAnchor.extent.z;
                 OnPlaneUpdated(plane);
-            }
+            }*/
+            OnPlaneUpdated(GetBoundedPlane(arPlaneAnchor));
         }
 
         private bool PlaneUpdated(ARPlaneAnchor anchor, BoundedPlane bp)
