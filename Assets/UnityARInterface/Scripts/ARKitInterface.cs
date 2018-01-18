@@ -28,7 +28,7 @@ namespace UnityARInterface
 		private Matrix4x4 m_DisplayTransform;
         private ARKitWorldTrackingSessionConfiguration m_SessionConfig;
 
-        private Dictionary<string, BoundedPlane> m_TrackedPlanes = new Dictionary<string, BoundedPlane>();
+        private Dictionary<ARPlaneAnchor, BoundedPlane> m_TrackedPlanes = new Dictionary<ARPlaneAnchor, BoundedPlane>();
 
         public override bool IsSupported
         {
@@ -81,11 +81,11 @@ namespace UnityARInterface
         {
             BoundedPlane plane;
 
-            if (!m_TrackedPlanes.TryGetValue(arPlaneAnchor.identifier, out plane))
+            if (!m_TrackedPlanes.TryGetValue(arPlaneAnchor, out plane))
             {
                 plane = new BoundedPlane(arPlaneAnchor.identifier, GetWorldPosition(arPlaneAnchor),
                     UnityARMatrixOps.GetRotation(arPlaneAnchor.transform), new Vector2(arPlaneAnchor.extent.x, arPlaneAnchor.extent.z));
-                m_TrackedPlanes.Add(arPlaneAnchor.identifier, plane);
+                m_TrackedPlanes.Add(arPlaneAnchor, plane);
             }
 
             return plane;
@@ -160,7 +160,24 @@ namespace UnityARInterface
 
         private void UpdateAnchor(ARPlaneAnchor arPlaneAnchor)
         {
-            OnPlaneUpdated(GetBoundedPlane(arPlaneAnchor));
+            BoundedPlane plane = GetBoundedPlane(arPlaneAnchor);
+
+            if (PlaneUpdated(arPlaneAnchor, plane))
+            {
+                plane.center = GetWorldPosition(arPlaneAnchor);
+                plane.rotation = UnityARMatrixOps.GetRotation(arPlaneAnchor.transform);
+                plane.extents.x = arPlaneAnchor.extent.x;
+                plane.extents.y = arPlaneAnchor.extent.z;
+                OnPlaneUpdated(plane);
+            }
+        }
+
+        private bool PlaneUpdated(ARPlaneAnchor anchor, BoundedPlane bp)
+        {
+            bool extents = (anchor.extent.x != bp.extents.x || anchor.extent.z != bp.extents.y);
+            bool rotation = UnityARMatrixOps.GetRotation(anchor.transform) != bp.rotation;
+            bool position = GetWorldPosition(anchor) != bp.center;
+            return (extents || rotation || position);
         }
 
         public override void StopService()
