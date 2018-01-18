@@ -26,9 +26,14 @@ namespace UnityARInterface
         };
 
         [SerializeField]
+        private bool m_ClearPlanesOnDisable;
+
+        [SerializeField]
         private GameObject m_PlanePrefab;
 
         [SerializeField]
+        private string m_PlaneLayerName = "ARGameObject";
+
         private int m_PlaneLayer;
 
         public int planeLayer { get { return m_PlaneLayer; } }
@@ -37,7 +42,7 @@ namespace UnityARInterface
 
         void OnEnable()
         {
-            m_PlaneLayer = LayerMask.NameToLayer ("ARGameObject");
+            m_PlaneLayer = LayerMask.NameToLayer (m_PlaneLayerName);
             ARInterface.planeAdded += PlaneAddedHandler;
             ARInterface.planeUpdated += PlaneUpdatedHandler;
             ARInterface.planeRemoved += PlaneRemovedHandler;
@@ -48,6 +53,7 @@ namespace UnityARInterface
             ARInterface.planeAdded -= PlaneAddedHandler;
             ARInterface.planeUpdated -= PlaneUpdatedHandler;
             ARInterface.planeRemoved -= PlaneRemovedHandler;
+            ClearPlanes();
         }
 
         protected virtual void CreateOrUpdateGameObject(BoundedPlane plane)
@@ -57,11 +63,6 @@ namespace UnityARInterface
             {
                 go = Instantiate(m_PlanePrefab, GetRoot());
 
-
-                // Make sure we can pick them later
-                foreach (var collider in go.GetComponentsInChildren<Collider>())
-                    collider.gameObject.layer = m_PlaneLayer;
-
                 m_Planes.Add(plane.id, go);
 
                 Renderer rend = go.GetComponentInChildren<Renderer>();
@@ -69,9 +70,10 @@ namespace UnityARInterface
                 rend.material.SetFloat("_UvRotation", Random.Range(0.0f, 360.0f));
 
                 // Is setting the mesh to null really necessary? Wouldn't there be a more optimal method?
-                Mesh mesh = go.GetComponentInChildren<MeshFilter>().mesh;
-                go.GetComponentInChildren<MeshCollider>().sharedMesh = null;
-                go.GetComponentInChildren<MeshCollider>().sharedMesh = mesh;
+                MeshCollider collider = go.GetComponentInChildren<MeshCollider>();
+                collider.gameObject.layer = m_PlaneLayer;
+                collider.sharedMesh = null;
+                collider.sharedMesh = go.GetComponentInChildren<MeshFilter>().mesh;
             }
 
             UpdateMeshIfNeeded(go, plane);
@@ -99,13 +101,21 @@ namespace UnityARInterface
             }
         }
 
-        private void UpdateMeshIfNeeded(GameObject go, BoundedPlane plane)
+        public virtual void ClearPlanes()
         {
-#if UNITY_EDITOR || UNITY_IOS
-            plane.meshVertices = new List<Vector3>(plane.quad);
-#elif UNITY_ANDROID
-            plane.trackedPlane.GetBoundaryPolygon(plane.meshVertices);
-#endif
+            if (m_ClearPlanesOnDisable)
+            {
+                foreach (KeyValuePair<string, GameObject> plane in m_Planes)
+                {
+                    Destroy(plane.Value);
+                    m_Planes.Remove(plane.Key);
+                }
+            }
+        }
+
+        protected virtual void UpdateMeshIfNeeded(GameObject go, BoundedPlane plane)
+        {
+            plane.GetBoundaryPolygon(ref plane.meshVertices);
 
             if (_AreVerticesListsEqual(plane.previousFrameMeshVertices, plane.meshVertices))
             {

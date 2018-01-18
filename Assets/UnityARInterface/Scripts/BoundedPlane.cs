@@ -6,7 +6,7 @@ namespace UnityARInterface
     public struct BoundedPlane
     {
         // ARCore reference to the plane
-        // Kept to pull vertices containing a more detailing plane polygon
+        // Kept to pull vertices containing a more detailed plane polygon
         public GoogleARCore.TrackedPlane trackedPlane;
 
         public string id;
@@ -19,6 +19,14 @@ namespace UnityARInterface
         public List<Vector3> meshVertices;
         public List<Color> meshColors;
         public List<int> meshIndices;
+        public void GetBoundaryPolygon(ref List<Vector3> boundaryPolygonPoints)
+        {
+#if UNITY_EDITOR || UNITY_IOS
+            boundaryPolygonPoints = new List<Vector3>(quad);
+#elif UNITY_ANDROID
+            trackedPlane.GetBoundaryPolygon(boundaryPolygonPoints);
+#endif
+        }
 
         public Vector3 normal { get { return rotation * Vector3.up; } }
         public Plane plane { get { return new Plane(normal, center); } }
@@ -65,6 +73,7 @@ namespace UnityARInterface
 
             trackedPlane = null;
         }
+
         public BoundedPlane(string newId, Vector3 newCenter, 
                 Quaternion newRotation, Vector2 newExtents, 
                 GoogleARCore.TrackedPlane newPlane)
