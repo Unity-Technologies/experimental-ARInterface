@@ -77,13 +77,10 @@ namespace UnityARInterface
 
         private BoundedPlane GetBoundedPlane(ARPlaneAnchor arPlaneAnchor)
         {
-            return new BoundedPlane()
-            {
-                id = arPlaneAnchor.identifier,
-                center = GetWorldPosition(arPlaneAnchor),
-                rotation = UnityARMatrixOps.GetRotation(arPlaneAnchor.transform),
-                extents = new Vector2(arPlaneAnchor.extent.x, arPlaneAnchor.extent.z)
-            };
+            return new BoundedPlane(arPlaneAnchor.identifier, 
+                        GetWorldPosition(arPlaneAnchor),
+                        UnityARMatrixOps.GetRotation(arPlaneAnchor.transform), 
+                        new Vector2(arPlaneAnchor.extent.x, arPlaneAnchor.extent.z)); ;
         }
 
         void UpdateFrame(UnityARCamera camera)
@@ -156,6 +153,14 @@ namespace UnityARInterface
         private void UpdateAnchor(ARPlaneAnchor arPlaneAnchor)
         {
             OnPlaneUpdated(GetBoundedPlane(arPlaneAnchor));
+        }
+
+        private bool PlaneUpdated(ARPlaneAnchor anchor, BoundedPlane bp)
+        {
+            bool extents = (anchor.extent.x != bp.extents.x || anchor.extent.z != bp.extents.y);
+            bool rotation = UnityARMatrixOps.GetRotation(anchor.transform) != bp.rotation;
+            bool position = GetWorldPosition(anchor) != bp.center;
+            return (extents || rotation || position);
         }
 
         public override void StopService()
