@@ -443,9 +443,11 @@ namespace UnityARInterface
                     else
                     {
                         boundedPlane = new BoundedPlane(Guid.NewGuid().ToString(), 
-                                            trackedPlane.Position,
-                                            trackedPlane.Rotation, 
-                                            new Vector2(trackedPlane.ExtentX, trackedPlane.ExtentZ));
+                                        trackedPlane.Position,
+                                        trackedPlane.Rotation, 
+                                        new Vector2(trackedPlane.ExtentX, trackedPlane.ExtentZ), 
+                                        trackedPlane);
+
                         m_TrackedPlanes.Add(trackedPlane, boundedPlane);
                         OnPlaneAdded(boundedPlane);
                     }
@@ -465,7 +467,6 @@ namespace UnityARInterface
 
                 foreach (var plane in planesToRemove)
                     m_TrackedPlanes.Remove(plane);
-
             }
         }
     }
