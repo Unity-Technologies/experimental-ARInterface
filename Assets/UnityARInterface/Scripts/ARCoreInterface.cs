@@ -389,9 +389,15 @@ namespace UnityARInterface
             m_CachedScreenOrientation = Screen.orientation;
         }
 
+
+        private bool FloatCompare(float a, float b)
+        {
+            return Mathf.Abs(a - b) < 9.99999944E-11f;
+        }
+
         private bool PlaneUpdated(TrackedPlane tp, BoundedPlane bp)
         {
-            var extents = (tp.ExtentX != bp.extents.x || tp.ExtentZ != bp.extents.y);
+            var extents = (!FloatCompare(tp.ExtentX, bp.extents.x) || !FloatCompare(tp.ExtentZ, bp.extents.y));
             var rotation = tp.Rotation != bp.rotation;
             var position = tp.Position != bp.center;
             return (extents || rotation || position);
@@ -409,56 +415,58 @@ namespace UnityARInterface
             if (Frame.TrackingState != TrackingState.Tracking)
                 return;
 
-            Frame.GetPlanes(m_TrackedPlaneBuffer);
-            foreach (var trackedPlane in m_TrackedPlaneBuffer)
+            if(m_ARCoreSessionConfig.EnablePlaneFinding)
             {
-                BoundedPlane boundedPlane;
-                if (m_TrackedPlanes.TryGetValue(trackedPlane, out boundedPlane))
+                Frame.GetPlanes(m_TrackedPlaneBuffer);
+                foreach (var trackedPlane in m_TrackedPlaneBuffer)
                 {
-                    // remove any subsumed planes
-                    if (trackedPlane.SubsumedBy != null)
+                    BoundedPlane boundedPlane;
+                    if (m_TrackedPlanes.TryGetValue(trackedPlane, out boundedPlane))
                     {
-                        OnPlaneRemoved(boundedPlane);
-                        m_TrackedPlanes.Remove(trackedPlane);
+                        // remove any subsumed planes
+                        if (trackedPlane.SubsumedBy != null)
+                        {
+                            OnPlaneRemoved(boundedPlane);
+                            m_TrackedPlanes.Remove(trackedPlane);
+                        }
+                        // update any planes with changed extents
+                        else if (PlaneUpdated(trackedPlane, boundedPlane))
+                        {
+                            boundedPlane.center = trackedPlane.Position;
+                            boundedPlane.rotation = trackedPlane.Rotation;
+                            boundedPlane.extents.x = trackedPlane.ExtentX;
+                            boundedPlane.extents.y = trackedPlane.ExtentZ;
+                            OnPlaneUpdated(boundedPlane);
+                        }
                     }
-                    // update any planes with changed extents
-                    else if (PlaneUpdated(trackedPlane, boundedPlane))
+                    // add any new planes
+                    else
                     {
-                        boundedPlane.center = trackedPlane.Position;
-                        boundedPlane.rotation = trackedPlane.Rotation;
-                        boundedPlane.extents.x = trackedPlane.ExtentX;
-                        boundedPlane.extents.y = trackedPlane.ExtentZ;
-                        OnPlaneUpdated(boundedPlane);
+                        boundedPlane = new BoundedPlane(Guid.NewGuid().ToString(), 
+                                            trackedPlane.Position,
+                                            trackedPlane.Rotation, 
+                                            new Vector2(trackedPlane.ExtentX, trackedPlane.ExtentZ));
+                        m_TrackedPlanes.Add(trackedPlane, boundedPlane);
+                        OnPlaneAdded(boundedPlane);
                     }
                 }
-                // add any new planes
-                else
+
+                // Check for planes that were removed from the tracked plane list
+                List<TrackedPlane> planesToRemove = new List<TrackedPlane>();
+                foreach (var kvp in m_TrackedPlanes)
                 {
-                    boundedPlane = new BoundedPlane(Guid.NewGuid().ToString(), 
-                                        trackedPlane.Position,
-                                        trackedPlane.Rotation, 
-                                        new Vector2(trackedPlane.ExtentX, trackedPlane.ExtentZ), 
-                                        trackedPlane);
-
-                    m_TrackedPlanes.Add(trackedPlane, boundedPlane);
-                    OnPlaneAdded(boundedPlane);
+                    var trackedPlane = kvp.Key;
+                    if (!m_TrackedPlaneBuffer.Exists(x => x == trackedPlane))
+                    {
+                        OnPlaneRemoved(kvp.Value);
+                        planesToRemove.Add(trackedPlane);
+                    }
                 }
-            }
 
-            // Check for planes that were removed from the tracked plane list
-            List<TrackedPlane> planesToRemove = new List<TrackedPlane>();
-            foreach (var kvp in m_TrackedPlanes)
-            {
-                var trackedPlane = kvp.Key;
-                if (!m_TrackedPlaneBuffer.Exists(x => x == trackedPlane))
-                {
-                    OnPlaneRemoved(kvp.Value);
-                    planesToRemove.Add(trackedPlane);
-                }
-            }
+                foreach (var plane in planesToRemove)
+                    m_TrackedPlanes.Remove(plane);
 
-            foreach (var plane in planesToRemove)
-                m_TrackedPlanes.Remove(plane);
+            }
         }
     }
 }
