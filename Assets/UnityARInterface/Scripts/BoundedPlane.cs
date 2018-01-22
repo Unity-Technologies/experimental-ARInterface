@@ -7,6 +7,7 @@ namespace UnityARInterface
     {
         // ARCore reference to the plane
         // Kept to pull vertices containing a more detailed plane polygon
+        // than the quad used by ARKit and AREditor
         public GoogleARCore.TrackedPlane trackedPlane;
 
         public string id;

@@ -95,6 +95,14 @@ namespace UnityARInterface
                 planeRemoved(plane);
         }
 
+        public virtual void ApplyAnchor(ARAnchor arAnchor)
+        {
+        }
+
+        public virtual void DestroyAnchor(ARAnchor arAnchor)
+        {
+        }
+
         private static ARInterface m_Interface;
 
         public static ARInterface GetInterface()

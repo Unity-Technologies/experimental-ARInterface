@@ -27,6 +27,7 @@ namespace UnityARInterface
         private LightEstimate m_LightEstimate;
 		private Matrix4x4 m_DisplayTransform;
         private ARKitWorldTrackingSessionConfiguration m_SessionConfig;
+        private Dictionary<string, ARAnchor> m_Anchors = new Dictionary<string, ARAnchor>();
 
         public override bool IsSupported
         {
@@ -155,12 +156,14 @@ namespace UnityARInterface
             OnPlaneUpdated(GetBoundedPlane(arPlaneAnchor));
         }
 
-        private bool PlaneUpdated(ARPlaneAnchor anchor, BoundedPlane bp)
+        private void UpdateUserAnchor(ARUserAnchor anchorData)
         {
-            bool extents = (anchor.extent.x != bp.extents.x || anchor.extent.z != bp.extents.y);
-            bool rotation = UnityARMatrixOps.GetRotation(anchor.transform) != bp.rotation;
-            bool position = GetWorldPosition(anchor) != bp.center;
-            return (extents || rotation || position);
+            ARAnchor anchor;
+            if (m_Anchors.TryGetValue(anchorData.identifier, out anchor))
+            {
+                anchor.transform.position = anchorData.transform.GetColumn(3);
+                anchor.transform.rotation = anchorData.transform.rotation;
+            }
         }
 
         public override void StopService()
@@ -258,6 +261,36 @@ namespace UnityARInterface
         public override void Update()
         {
 
+        }
+
+        public override void ApplyAnchor(ARAnchor arAnchor)
+        {
+            if (!IsRunning)
+                return;
+
+            Matrix4x4 matrix = Matrix4x4.TRS(arAnchor.transform.position, arAnchor.transform.rotation, arAnchor.transform.localScale);
+            UnityARUserAnchorData anchorData = new UnityARUserAnchorData();
+            anchorData.transform.column0 = matrix.GetColumn(0);
+            anchorData.transform.column1 = matrix.GetColumn(1);
+            anchorData.transform.column2 = matrix.GetColumn(2);
+            anchorData.transform.column3 = matrix.GetColumn(3);
+
+            anchorData = UnityARSessionNativeInterface.GetARSessionNativeInterface().AddUserAnchor(anchorData);
+            arAnchor.anchorID = anchorData.identifierStr;
+            m_Anchors[arAnchor.anchorID] = arAnchor;
+        }
+
+        public override void DestroyAnchor(ARAnchor arAnchor)
+        {
+            if (!string.IsNullOrEmpty(arAnchor.anchorID))
+            {
+                UnityARSessionNativeInterface.GetARSessionNativeInterface().RemoveUserAnchor(arAnchor.anchorID);
+                if (m_Anchors.ContainsKey(arAnchor.anchorID))
+                {
+                    m_Anchors.Remove(arAnchor.anchorID);
+                }
+                arAnchor.anchorID = null;
+            }
         }
     }
 }
