@@ -15,7 +15,6 @@ namespace UnityARInterface
         public Quaternion rotation;
 
         // Mesh data
-        public List<Vector3> previousFrameMeshVertices;
         public List<Vector3> meshVertices;
         public List<Color> meshColors;
         public List<int> meshIndices;
@@ -65,7 +64,6 @@ namespace UnityARInterface
             center = newCenter;
             rotation = newRotation;
             extents = newExtents;
-            previousFrameMeshVertices = new List<Vector3>();
             meshVertices = new List<Vector3>();
             meshColors = new List<Color>();
             meshIndices = new List<int>();
@@ -81,7 +79,6 @@ namespace UnityARInterface
             center = newCenter;
             rotation = newRotation;
             extents = newExtents;
-            previousFrameMeshVertices = new List<Vector3>();
             meshVertices = new List<Vector3>();
             meshColors = new List<Color>();
             meshIndices = new List<int>();
