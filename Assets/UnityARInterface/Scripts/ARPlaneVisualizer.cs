@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 namespace UnityARInterface
 {
@@ -36,6 +37,7 @@ namespace UnityARInterface
         public int planeLayer { get { return m_PlaneLayer; } }
 
         private Dictionary<string, GameObject> m_Planes = new Dictionary<string, GameObject>();
+        private Dictionary<GameObject, float> m_ys = new Dictionary<GameObject, float>();
 
         void OnEnable()
         {
@@ -61,16 +63,26 @@ namespace UnityARInterface
                 go = Instantiate(m_PlanePrefab, GetRoot());
 
                 m_Planes.Add(plane.id, go);
+                m_ys.Add(go, plane.center.y);
 
-                Renderer rend = go.GetComponentInChildren<Renderer>();
-                rend.material.SetColor("_GridColor", k_PlaneColors[m_Planes.Count % k_PlaneColors.Length]);
-                rend.material.SetFloat("_UvRotation", Random.Range(0.0f, 360.0f));
+                float uvRot = Random.Range(0.0f, 360.0f);
+                foreach (Renderer renderer in go.GetComponentsInChildren<Renderer>())
+                {
+                    renderer.material.SetColor("_GridColor", k_PlaneColors[m_Planes.Count % k_PlaneColors.Length]);
+                    renderer.material.SetFloat("_UvRotation", uvRot);
+                }
 
-                // Is setting the mesh to null really necessary? Wouldn't there be a more optimal method?
-                MeshCollider collider = go.GetComponentInChildren<MeshCollider>();
-                collider.gameObject.layer = m_PlaneLayer;
-                collider.sharedMesh = null;
-                collider.sharedMesh = go.GetComponentInChildren<MeshFilter>().mesh;
+                //Renderer rend = go.GetComponentInChildren<Renderer>();
+                //rend.material.SetColor("_GridColor", k_PlaneColors[m_Planes.Count % k_PlaneColors.Length]);
+                //rend.material.SetFloat("_UvRotation", Random.Range(0.0f, 360.0f));
+
+                MeshCollider[] colliders = go.GetComponentsInChildren<MeshCollider>();
+                foreach (MeshCollider collider in colliders)
+                {
+                    collider.gameObject.layer = m_PlaneLayer;
+                }
+
+                SortRenderQueues();
             }
 
             UpdateMeshIfNeeded(go, plane);
@@ -119,6 +131,13 @@ namespace UnityARInterface
                 return;
             }
 
+            m_ys.Remove(go);
+            m_ys.Add(go, plane.center.y);
+
+            List<Vector3> insideMeshVertices = new List<Vector3>();
+            List<Color> insideMeshColors = new List<Color>();
+            int insidePlanePolygonCount = 0;
+
             plane.previousFrameMeshVertices.Clear();
             plane.previousFrameMeshVertices.AddRange(plane.meshVertices);
 
@@ -162,20 +181,26 @@ namespace UnityARInterface
                 plane.meshVertices.Add((scale * d) + plane.center);
 
                 plane.meshColors.Add(Color.white);
+
+                insideMeshVertices.Add((scale * d) + plane.center);
+                insideMeshColors.Add(new Color(1, 1, 1, 1f));
+                insidePlanePolygonCount++;
             }
 
             plane.meshIndices.Clear();
             int firstOuterVertex = 0;
             int firstInnerVertex = planePolygonCount;
 
-            // Generate triangle (4, 5, 6) and (4, 6, 7).
+            UpdateOpaqueMesh(go, insidePlanePolygonCount, insideMeshVertices, insideMeshColors);
+
+            /*// Generate triangle (4, 5, 6) and (4, 6, 7).
             for (int i = 0; i < planePolygonCount - 2; ++i)
             {
                 plane.meshIndices.Add(firstInnerVertex);
                 plane.meshIndices.Add(firstInnerVertex + i + 1);
                 plane.meshIndices.Add(firstInnerVertex + i + 2);
-            }
-
+            }*/
+            
             // Generate triangle (0, 1, 4), (4, 1, 5), (5, 1, 2), (5, 2, 6), (6, 2, 3), (6, 3, 7)
             // (7, 3, 0), (7, 0, 4)
             for (int i = 0; i < planePolygonCount; ++i)
@@ -200,10 +225,28 @@ namespace UnityARInterface
             mesh.SetIndices(plane.meshIndices.ToArray(), MeshTopology.Triangles, 0);
             mesh.SetColors(plane.meshColors);
 
-            // Is setting the mesh to null really necessary? Wouldn't there be a more optimal method?
-            MeshCollider collider = go.GetComponentInChildren<MeshCollider>();
-            collider.sharedMesh = null;
-            collider.sharedMesh = mesh;
+            go.transform.GetChild(0).GetComponent<MeshCollider>().sharedMesh = mesh;
+        }
+
+        private void UpdateOpaqueMesh(GameObject go, int planePolygonCount, List<Vector3> insideMeshVertices, List<Color> insideMeshColors)
+        {
+            List<int> meshIndices = new List<int>();
+
+            // Generate triangle (0, 1, 2) and (0, 2, 3).
+            for (int i = 0; i < planePolygonCount - 2; ++i)
+            {
+                meshIndices.Add(0);
+                meshIndices.Add(i + 1);
+                meshIndices.Add(i + 2);
+            }
+
+            Mesh mesh = go.transform.GetChild(1).GetComponent<MeshFilter>().mesh;
+            mesh.Clear();
+            mesh.SetVertices(insideMeshVertices);
+            mesh.SetIndices(meshIndices.ToArray(), MeshTopology.Triangles, 0);
+            mesh.SetColors(insideMeshColors);
+
+            go.transform.GetChild(1).GetComponent<MeshCollider>().sharedMesh = mesh;
         }
 
         private bool _AreVerticesListsEqual(List<Vector3> firstList, List<Vector3> secondList)
@@ -222,6 +265,23 @@ namespace UnityARInterface
             }
 
             return true;
+        }
+
+        private void SortRenderQueues()
+        {
+            var sorted = from pair in m_ys orderby pair.Value ascending select pair;
+
+            int rankInQueue = 1000;
+
+            foreach (var pair in sorted)
+            {
+                Renderer[] renderers = pair.Key.GetComponentsInChildren<Renderer>();
+                foreach (Renderer renderer in renderers)
+                {
+                    renderer.material.renderQueue = rankInQueue;
+                }
+                rankInQueue--;
+            }
         }
     }
 }

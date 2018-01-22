@@ -6,8 +6,8 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: PlaneGrid
-  m_Shader: {fileID: 4800000, guid: f506679359dfbf5488ea44fe6a386584, type: 3}
+  m_Name: PlaneGridOpaque
+  m_Shader: {fileID: 4800000, guid: 02ccaed6c331740439e85e37e990dad7, type: 3}
   m_ShaderKeywords: _ALPHAPREMULTIPLY_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -75,11 +75,11 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
-    - _UvRotation: 3.39
+    - _UvRotation: 39.91547
     - _ZWrite: 0
     m_Colors:
     - _Color: {r: 0, g: 0.3254902, b: 0.34509805, a: 0.716}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _GridColor: {r: 0.21960786, g: 0.21960786, b: 0.21960786, a: 1}
+    - _GridColor: {r: 0.95686275, g: 0.2627451, b: 0.21176471, a: 1}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
     - _TintColor: {r: 0.9264706, g: 0, b: 0, a: 0.5}

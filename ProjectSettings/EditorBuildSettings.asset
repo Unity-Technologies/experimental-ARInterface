@@ -5,30 +5,6 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/UnityARInterface/Examples/ScaledContent/ScaledContent.unity
-    guid: 0f84f793d5703364299eb073fc904f45
-  - enabled: 0
-    path: Assets/UnityARInterface/ARRemote/RemoteDevice.unity
-    guid: 20b446302c6bc5a4db8e59fc358aba13
-  - enabled: 0
-    path: Assets/UnityARInterface/Examples/SimpleAROptions/SimpleAROptions.unity
-    guid: f7615a991533a4c50866ba45f97cc13a
-  - enabled: 0
-    path: Assets/UnityARInterface/Examples/ARFocusSquare/ARFocusSquareScene.unity
-    guid: 136f835817e3a4ccd86e1434503880d7
-  - enabled: 0
+  - enabled: 1
     path: Assets/UnityARInterface/Examples/ARBallz/ARBallz.unity
     guid: dff119607a5a14008b94240522000efb
-  - enabled: 0
-    path: Assets/GoogleARCore/HelloARExample/Scenes/HelloAR.unity
-    guid: e6a6fa04348cb45c9b0221eb19c946da
-  - enabled: 0
-    path: Assets/TanksNetworkingAR/Scenes/ARSetupScene.unity
-    guid: 080ac1b98781a4b7ba0ae27b39577f1b
-  - enabled: 0
-    path: Assets/TanksNetworkingAR/Scenes/LobbyScene.unity
-    guid: 36e75a5ad0c2df847b41f2c664f486c6
-  - enabled: 0
-    path: Assets/TanksNetworkingAR/Scenes/CompleteMainScene.unity
-    guid: 53dbee9b5f0f43642ab7e99460ca86d2
