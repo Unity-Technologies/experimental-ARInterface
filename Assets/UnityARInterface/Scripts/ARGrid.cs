@@ -42,14 +42,16 @@ namespace UnityARInterface
 
         public void UpdateMeshIfNeeded(BoundedPlane plane)
         {
-            plane.GetBoundaryPolygon(ref plane.meshVertices);
+            List<Vector3> meshVertices = plane.GetBoundaryPolygon();
 
-            if (_AreVerticesListsEqual(new List<Vector3>(m_Mesh.vertices), plane.meshVertices))
+            if (_AreVerticesListsEqual(new List<Vector3>(m_Mesh.vertices), meshVertices))
             {
                 return;
             }
+            List<Color> meshColors = new List<Color>();
+            List<int> meshIndices = new List<int>();
 
-            int planePolygonCount = plane.meshVertices.Count;
+            int planePolygonCount = meshVertices.Count;
 
             // The following code converts a polygon to a mesh with two polygons, inner
             // polygon renders with 100% opacity and fade out to outter polygon with opacity 0%, as shown below.
@@ -61,12 +63,12 @@ namespace UnityARInterface
             // |             |      | |         | |
             // |             |      |7-----------6|
             // ---------------     3---------------2
-            plane.meshColors.Clear();
+            meshColors.Clear();
 
             // Fill transparent color to vertices 0 to 3.
             for (int i = 0; i < planePolygonCount; ++i)
             {
-                plane.meshColors.Add(Color.clear);
+                meshColors.Add(Color.clear);
             }
 
             // Feather distance 0.2 meters.
@@ -78,27 +80,27 @@ namespace UnityARInterface
             // Add vertex 4 to 7.
             for (int i = 0; i < planePolygonCount; ++i)
             {
-                Vector3 v = plane.meshVertices[i];
+                Vector3 v = meshVertices[i];
 
                 // Vector from plane center to current point
                 Vector3 d = v - plane.center;
 
                 float scale = 1.0f - Mathf.Min(featherLength / d.magnitude, featherScale);
-                plane.meshVertices.Add((scale * d) + plane.center);
+                meshVertices.Add((scale * d) + plane.center);
 
-                plane.meshColors.Add(Color.white);
+                meshColors.Add(Color.white);
             }
 
-            plane.meshIndices.Clear();
+            meshIndices.Clear();
             int firstOuterVertex = 0;
             int firstInnerVertex = planePolygonCount;
 
             // Generate triangle (4, 5, 6) and (4, 6, 7).
             for (int i = 0; i < planePolygonCount - 2; ++i)
             {
-                plane.meshIndices.Add(firstInnerVertex);
-                plane.meshIndices.Add(firstInnerVertex + i + 1);
-                plane.meshIndices.Add(firstInnerVertex + i + 2);
+                meshIndices.Add(firstInnerVertex);
+                meshIndices.Add(firstInnerVertex + i + 1);
+                meshIndices.Add(firstInnerVertex + i + 2);
             }
 
             // Generate triangle (0, 1, 4), (4, 1, 5), (5, 1, 2), (5, 2, 6), (6, 2, 3), (6, 3, 7)
@@ -110,19 +112,19 @@ namespace UnityARInterface
                 int innerVertex1 = firstInnerVertex + i;
                 int innerVertex2 = firstInnerVertex + ((i + 1) % planePolygonCount);
 
-                plane.meshIndices.Add(outerVertex1);
-                plane.meshIndices.Add(outerVertex2);
-                plane.meshIndices.Add(innerVertex1);
+                meshIndices.Add(outerVertex1);
+                meshIndices.Add(outerVertex2);
+                meshIndices.Add(innerVertex1);
 
-                plane.meshIndices.Add(innerVertex1);
-                plane.meshIndices.Add(outerVertex2);
-                plane.meshIndices.Add(innerVertex2);
+                meshIndices.Add(innerVertex1);
+                meshIndices.Add(outerVertex2);
+                meshIndices.Add(innerVertex2);
             }
 
             m_Mesh.Clear();
-            m_Mesh.SetVertices(plane.meshVertices);
-            m_Mesh.SetIndices(plane.meshIndices.ToArray(), MeshTopology.Triangles, 0);
-            m_Mesh.SetColors(plane.meshColors);
+            m_Mesh.SetVertices(meshVertices);
+            m_Mesh.SetIndices(meshIndices.ToArray(), MeshTopology.Triangles, 0);
+            m_Mesh.SetColors(meshColors);
 
             m_MeshCollider.sharedMesh = m_Mesh;
         }

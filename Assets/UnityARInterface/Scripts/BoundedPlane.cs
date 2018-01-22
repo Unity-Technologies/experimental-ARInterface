@@ -6,27 +6,24 @@ namespace UnityARInterface
     public struct BoundedPlane
     {
         // ARCore reference to the plane
-        // Kept to pull vertices containing a more detailed plane polygon
-        // than the quad used by ARKit and AREditor
+        // Kept to pull vertices containing a more detailed plane polygon than the quad used by ARKit and AREditor
         public GoogleARCore.TrackedPlane trackedPlane;
+        // Mesh data
+        public List<Vector3> GetBoundaryPolygon()
+        {
+#if UNITY_EDITOR || UNITY_IOS
+            return new List<Vector3>(quad);
+#elif UNITY_ANDROID
+            List<Vector3> boundaryPolygonPoints = new List<Vector3>();
+            trackedPlane.GetBoundaryPolygon(boundaryPolygonPoints);
+            return boundaryPolygonPoints;
+#endif
+        }
 
         public string id;
         public Vector3 center;
         public Vector2 extents;
         public Quaternion rotation;
-
-        // Mesh data
-        public List<Vector3> meshVertices;
-        public List<Color> meshColors;
-        public List<int> meshIndices;
-        public void GetBoundaryPolygon(ref List<Vector3> boundaryPolygonPoints)
-        {
-#if UNITY_EDITOR || UNITY_IOS
-            boundaryPolygonPoints = new List<Vector3>(quad);
-#elif UNITY_ANDROID
-            trackedPlane.GetBoundaryPolygon(boundaryPolygonPoints);
-#endif
-        }
 
         public Vector3 normal { get { return rotation * Vector3.up; } }
         public Plane plane { get { return new Plane(normal, center); } }
@@ -65,9 +62,6 @@ namespace UnityARInterface
             center = newCenter;
             rotation = newRotation;
             extents = newExtents;
-            meshVertices = new List<Vector3>();
-            meshColors = new List<Color>();
-            meshIndices = new List<int>();
 
             trackedPlane = null;
         }
@@ -80,9 +74,6 @@ namespace UnityARInterface
             center = newCenter;
             rotation = newRotation;
             extents = newExtents;
-            meshVertices = new List<Vector3>();
-            meshColors = new List<Color>();
-            meshIndices = new List<int>();
 
             trackedPlane = newPlane;
         }
