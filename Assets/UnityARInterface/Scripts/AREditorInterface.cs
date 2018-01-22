@@ -119,10 +119,10 @@ namespace UnityARInterface
             if (Input.GetKey(KeyCode.D))
                 m_CameraPose.position += right * Time.deltaTime * speed;
 
-            if (Input.GetKey(KeyCode.E))
+            if (Input.GetKey(KeyCode.Q))
                 m_CameraPose.position += up * Time.deltaTime * speed;
 
-            if (Input.GetKey(KeyCode.Q))
+            if (Input.GetKey(KeyCode.Z))
                 m_CameraPose.position -= up * Time.deltaTime * speed;
 
             if (Input.GetMouseButton(1))
