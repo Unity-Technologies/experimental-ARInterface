@@ -23,7 +23,7 @@ namespace UnityARInterface
         private byte[] m_TextureUVBytes;
         private byte[] m_TextureYBytes2;
         private byte[] m_TextureUVBytes2;
-        private ARBackgroundRenderer m_BackgroundRenderer;
+        private ARInterfaceBackgroundRenderer m_BackgroundRenderer;
         private Texture2D _videoTextureY;
         private Texture2D _videoTextureCbCr;
         private GCHandle m_PinnedYArray;
@@ -281,7 +281,7 @@ namespace UnityARInterface
             m_Camera = camera;
             m_ClearMaterial = Resources.Load("YUVMaterial", typeof(Material)) as Material;
 
-            m_BackgroundRenderer = new ARBackgroundRenderer();
+            m_BackgroundRenderer = new ARInterfaceBackgroundRenderer();
             m_BackgroundRenderer.backgroundMaterial = m_ClearMaterial;
             m_BackgroundRenderer.camera = camera;
         }
@@ -296,7 +296,13 @@ namespace UnityARInterface
             ARTextureHandles handles = UnityARSessionNativeInterface.GetARSessionNativeInterface().GetARVideoTextureHandles();
             if (handles.textureY == System.IntPtr.Zero || handles.textureCbCr == System.IntPtr.Zero)
             {
+                m_BackgroundRenderer.DisableRendering();
                 return;
+            }
+
+            if(!m_BackgroundRenderer.Enabled)
+            {
+                m_BackgroundRenderer.EnableRendering();
             }
 
             Resolution currentResolution = Screen.currentResolution;
