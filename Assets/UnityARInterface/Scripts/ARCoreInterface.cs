@@ -8,7 +8,7 @@ using UnityEngine.XR;
 
 namespace UnityARInterface
 {
-    public class ARCoreInterface : ARInterface
+    public partial class ARCoreInterface : ARInterface
     {
        
 #region ARCoreCameraAPI

@@ -9,7 +9,7 @@ using UnityEngine.XR.iOS;
 
 namespace UnityARInterface
 {
-    public class ARKitInterface : ARInterface
+    public partial class ARKitInterface : ARInterface
     {
         private Material m_ClearMaterial;
         private UnityARSessionNativeInterface nativeInterface
