@@ -12,7 +12,7 @@ using UnityEngine.XR.iOS;
 // Runs on the Editor. Talks to the remote Player.
 namespace UnityARInterface
 {
-    public class ARRemoteEditorInterface : ARInterface
+    public partial class ARRemoteEditorInterface : ARInterface
     {
         private bool m_SendVideo;
         public bool sendVideo

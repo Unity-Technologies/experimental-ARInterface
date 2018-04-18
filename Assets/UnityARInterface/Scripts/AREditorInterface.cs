@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace UnityARInterface
 {
-    public class AREditorInterface : ARInterface
+    public partial class AREditorInterface : ARInterface
     {
         float m_LastTime;
         enum State

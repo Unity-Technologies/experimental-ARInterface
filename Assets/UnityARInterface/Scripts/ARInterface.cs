@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace UnityARInterface
 {
-    public abstract class ARInterface
+    public abstract partial class ARInterface
     {
         public struct Settings
         {
