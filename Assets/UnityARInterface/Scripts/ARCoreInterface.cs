@@ -337,21 +337,38 @@ namespace UnityARInterface
 
         public override void SetupCamera(Camera camera)
         {
-            ARCoreBackgroundRenderer backgroundRenderer =
-                camera.GetComponent<ARCoreBackgroundRenderer>();
-
-            if (backgroundRenderer == null)
-            {
-                camera.gameObject.SetActive(false);
-                backgroundRenderer = camera.gameObject.AddComponent<ARCoreBackgroundRenderer>();
-                backgroundRenderer.BackgroundMaterial = Resources.Load("Materials/ARBackground", typeof(Material)) as Material;
-                camera.gameObject.SetActive(true);
-            }
+            m_BackgroundRenderer = new ARBackgroundRenderer();
+            m_BackgroundRenderer.backgroundMaterial = Resources.Load("Materials/ARBackground", typeof(Material)) as Material;
+            m_BackgroundRenderer.camera = camera;
         }
 
         public override void UpdateCamera(Camera camera)
         {
-            // This is handled for us by the ARCoreBackgroundRenderer
+            if (Screen.orientation != m_CachedScreenOrientation)
+            {
+                CalculateDisplayTransform();
+                m_CachedScreenOrientation = Screen.orientation;
+            }
+
+            if (!m_BackgroundRendering || Frame.CameraImage.Texture == null)
+                return;
+
+            const string mainTexVar = "_MainTex";
+            const string topLeftRightVar = "_UvTopLeftRight";
+            const string bottomLeftRightVar = "_UvBottomLeftRight";
+
+            m_BackgroundRenderer.backgroundMaterial.SetTexture(mainTexVar, Frame.CameraImage.Texture);
+
+            var uvQuad = Frame.CameraImage.DisplayUvCoords;
+
+            m_BackgroundRenderer.backgroundMaterial.SetVector(topLeftRightVar,
+                new Vector4(uvQuad.TopLeft.x, uvQuad.TopLeft.y, uvQuad.TopRight.x, uvQuad.TopRight.y));
+            m_BackgroundRenderer.backgroundMaterial.SetVector(bottomLeftRightVar,
+                new Vector4(uvQuad.BottomLeft.x, uvQuad.BottomLeft.y, uvQuad.BottomRight.x, uvQuad.BottomRight.y));
+
+            camera.projectionMatrix = Frame.CameraImage.GetCameraProjectionMatrix(
+                camera.nearClipPlane, camera.farClipPlane);
+
         }
 
         private bool PlaneUpdated(TrackedPlane tp, BoundedPlane bp)
