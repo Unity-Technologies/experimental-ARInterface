@@ -48,11 +48,10 @@ namespace UnityARInterface
         private Dictionary<TrackedPlane, BoundedPlane> m_TrackedPlanes = new Dictionary<TrackedPlane, BoundedPlane>();
         private ARCoreSession m_ARCoreSession;
         private ARCoreSessionConfig m_ARCoreSessionConfig;
-        private ARBackgroundRenderer m_BackgroundRenderer;
+        private ARCoreBackgroundRenderer m_ARCoreBackgroundRenderer;
         private Matrix4x4 m_DisplayTransform = Matrix4x4.identity;
         private List<Vector4> m_TempPointCloud = new List<Vector4>();
         private Dictionary<ARAnchor, Anchor> m_Anchors = new Dictionary<ARAnchor, Anchor>();
-        private bool m_BackgroundRendering;
 
         public override bool IsSupported
         {
@@ -68,16 +67,17 @@ namespace UnityARInterface
         {
             get
             {
-                return m_BackgroundRendering;
+                if (m_ARCoreBackgroundRenderer == null)
+                    return false;
+
+                return m_ARCoreBackgroundRenderer.enabled;
             }
             set
             {
-                if (m_BackgroundRenderer == null)
+                if (m_ARCoreBackgroundRenderer == null)
                     return;
 
-                m_BackgroundRendering = value;
-                m_BackgroundRenderer.mode = m_BackgroundRendering ? 
-                    ARRenderMode.MaterialAsBackground : ARRenderMode.StandardBackground;
+                m_ARCoreBackgroundRenderer.enabled = value;
             }
         }
 
@@ -163,9 +163,6 @@ namespace UnityARInterface
             m_ARCoreSession.enabled = false;
             TextureReader_destroy();
             BackgroundRendering = false;
-            m_BackgroundRenderer.backgroundMaterial = null;
-            m_BackgroundRenderer.camera = null;
-            m_BackgroundRenderer = null;
             IsRunning = false;
         }
 
@@ -337,14 +334,13 @@ namespace UnityARInterface
 
         public override void SetupCamera(Camera camera)
         {
-            ARCoreBackgroundRenderer backgroundRenderer =
-                camera.GetComponent<ARCoreBackgroundRenderer>();
+            m_ARCoreBackgroundRenderer = camera.GetComponent<ARCoreBackgroundRenderer>();
 
-            if (backgroundRenderer == null)
+            if (m_ARCoreBackgroundRenderer == null)
             {
                 camera.gameObject.SetActive(false);
-                backgroundRenderer = camera.gameObject.AddComponent<ARCoreBackgroundRenderer>();
-                backgroundRenderer.BackgroundMaterial = Resources.Load("Materials/ARBackground", typeof(Material)) as Material;
+                m_ARCoreBackgroundRenderer = camera.gameObject.AddComponent<ARCoreBackgroundRenderer>();
+                m_ARCoreBackgroundRenderer.BackgroundMaterial = Resources.Load("Materials/ARBackground", typeof(Material)) as Material;
                 camera.gameObject.SetActive(true);
             }
         }

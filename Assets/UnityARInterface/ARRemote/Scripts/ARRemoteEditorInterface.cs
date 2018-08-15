@@ -209,6 +209,7 @@ namespace UnityARInterface
         public void StartRemoteService(Settings settings)
         {
             sendVideo = m_SendVideo;
+            BackgroundRendering = m_BackgroundRendering;
             var serializedSettings = (SerializableARSettings)settings;
             SendToPlayer(ARMessageIds.SubMessageIds.startService, serializedSettings);
             IsRemoteServiceRunning = true;
