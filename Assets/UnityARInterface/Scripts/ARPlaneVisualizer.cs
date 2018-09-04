@@ -6,11 +6,13 @@ namespace UnityARInterface
 {
     public class ARPlaneVisualizer : ARBase
     {
+        public static ARPlaneVisualizer instance;
+
         [SerializeField]
         private GameObject m_PlanePrefab;
 
         [SerializeField]
-        private int m_PlaneLayer;
+        internal int m_PlaneLayer;
 
         public int planeLayer { get { return m_PlaneLayer; } }
 
@@ -22,6 +24,8 @@ namespace UnityARInterface
             ARInterface.planeAdded += PlaneAddedHandler;
             ARInterface.planeUpdated += PlaneUpdatedHandler;
             ARInterface.planeRemoved += PlaneRemovedHandler;
+
+            instance = this;
         }
 
         void OnDisable()

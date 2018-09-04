@@ -376,5 +376,62 @@ namespace UnityARInterface
                 arAnchor.anchorID = null;
             }
         }
+
+        private ARHitTestResultType[] GetARHitTestResultType(List<HitTestResultType> hitTypes)
+        {
+            List<ARHitTestResultType> nativeFlags = new List<ARHitTestResultType>();
+            foreach (HitTestResultType flag in hitTypes)
+            {
+                switch (flag)
+                {
+                    case HitTestResultType.FeaturePoint:
+                        nativeFlags.Add(ARHitTestResultType.ARHitTestResultTypeFeaturePoint);
+                        break;
+                    case HitTestResultType.PlaneWithinBoxExtents:
+                        nativeFlags.Add(ARHitTestResultType.ARHitTestResultTypeExistingPlaneUsingExtent);
+                        break;
+                    case HitTestResultType.PlaneWithinInfinity:
+                        nativeFlags.Add(ARHitTestResultType.ARHitTestResultTypeExistingPlane);
+                        break;
+                }
+            }
+            nativeFlags.Add(ARHitTestResultType.ARHitTestResultTypeHorizontalPlane);
+            return nativeFlags.ToArray();
+        }
+
+        public override bool NativeHitTest(Vector2 screenPos, out HitTestResult hitTestResult, List<HitTestResultType> hitTestResultTypes)
+        {
+            var viewPortPoint = Camera.main.ScreenToViewportPoint(screenPos);
+
+            ARPoint point = new ARPoint
+            {
+                x = viewPortPoint.x,
+                y = viewPortPoint.y
+            };
+
+            // prioritize reults types
+            ARHitTestResultType[] resultTypes = GetARHitTestResultType(hitTestResultTypes);
+         
+            hitTestResult = null;
+            foreach (ARHitTestResultType resultType in resultTypes)
+            {
+                List<ARHitTestResult> hitResults = UnityARSessionNativeInterface.GetARSessionNativeInterface().HitTest(point, resultType);
+
+                if (hitResults.Count > 0)
+                {
+                    foreach (var hitResult in hitResults)
+                    {
+
+                        hitTestResult = new HitTestResult
+                        {
+                            position = UnityARMatrixOps.GetPosition(hitResult.worldTransform),
+                            rotation = UnityARMatrixOps.GetRotation(hitResult.worldTransform)
+                        };
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
     }
 }

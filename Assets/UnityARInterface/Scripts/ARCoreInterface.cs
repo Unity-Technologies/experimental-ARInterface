@@ -463,5 +463,42 @@ namespace UnityARInterface
 
             }
         }
+
+        public TrackableHitFlags GetTrackableHitFlags(List<HitTestResultType> hitTypes){
+            TrackableHitFlags nativeFlags = TrackableHitFlags.None; 
+            foreach(HitTestResultType flag in hitTypes){
+                switch(flag){
+                    case HitTestResultType.FeaturePoint:
+                        nativeFlags |= TrackableHitFlags.FeaturePoint;
+                        break;
+                    case HitTestResultType.PlaneWithinBoxExtents:
+                        nativeFlags |= TrackableHitFlags.PlaneWithinBounds;
+                        break;
+                    case HitTestResultType.PlaneWithinInfinity:
+                        nativeFlags |= TrackableHitFlags.PlaneWithinInfinity;
+                        break;
+                }
+            }
+            return nativeFlags;
+        } 
+
+        public override bool NativeHitTest(Vector2 screenPos, out HitTestResult hitTestResult, List<HitTestResultType> hitTestResultTypes)
+        {
+            List<TrackableHit> hits = new List<TrackableHit>();
+            TrackableHitFlags raycastFilter = GetTrackableHitFlags(hitTestResultTypes);
+            hitTestResult = null;
+
+            TrackableHit hit;
+            if (Frame.Raycast(screenPos.x, screenPos.y, raycastFilter, out hit))
+            {
+                hitTestResult = new HitTestResult
+                {
+                    position = hit.Pose.position,
+                    rotation = hit.Pose.rotation
+                };
+                return true;
+            }
+            return false;
+        }
     }
 }
